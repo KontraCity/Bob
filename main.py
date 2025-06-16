@@ -1,5 +1,8 @@
+from config import Config
+
 def main() -> int:
-    print("Hello, World!")
+    config = Config()
+    print(f"Bot token: {config.getToken()}")
     return 0
 
 if __name__ == "__main__":
