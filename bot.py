@@ -1,22 +1,25 @@
-import logging
-import discord
+import glob, logging
+from discord import Intents
+from discord.ext import commands
 from config import Config
 from utility import configureLogger
 
-class Bot(discord.Client):
+class Bot(commands.Bot):
     def __init__(self, config: Config):
-        self.token = config.getToken()
-
-        intents = discord.Intents.default()
-        intents.message_content = True
-        super(Bot, self).__init__(intents=intents)
         configureLogger(logging.getLogger("discord"))
+        intents = Intents.default()
+        intents.voice_states = True
+        super(Bot, self).__init__(command_prefix="!", intents=intents)
+        super(Bot, self).run(config.getToken(), log_handler=None)
+        
+    async def setup_hook(self) -> None:
+        for path in glob.glob("cogs/*.py"):
+            path = path.replace("\\\\", ".")
+            path = path.replace("\\", ".")
+            path = path.replace("/", ".")
+            path = path.replace(".py", "")
+            await self.load_extension(path)
+        await self.tree.sync()
 
-    def run(self):
-        super(Bot, self).run(self.token, log_handler=None)
-
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         print(f"Logged in as {self.user}")
-
-    async def on_message(self, message):
-        print(f"Message from {message.author}: {message.content}")
