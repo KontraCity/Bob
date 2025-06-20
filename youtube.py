@@ -34,16 +34,16 @@ class Video:
         if video_id is None:
             raise Exception("Invalid video ID or URL")
 
-        video = pytubefix.YouTube(f"https://www.youtube.com/watch?v={video_id}", use_oauth=True, allow_oauth_cache=True)
+        video = pytubefix.YouTube(f"https://www.youtube.com/watch?v={video_id}")
         return Video(video)
-    
+
     def __init__(self, video: pytubefix.YouTube):
         self._video = video
         self.video_id = video.video_id
         self.watch_url = video.watch_url
         self.title = video.title
         self.author = video.author
-        self.length = video.length
+        self.length = datetime.timedelta(seconds=video.length)
         self.thumbnail_url = video.thumbnail_url
         self.views = video.views
         self.chapters = [Video.Chapter(c.title, c.start_seconds, c.duration, c.thumbnails[-1].url) for c in video.chapters]
@@ -72,18 +72,35 @@ class Playlist:
         if playlist_id is None:
             raise Exception("Invalid playlist ID or URL")
 
-        playlist = pytubefix.Playlist(playlist_id, use_oauth=True, allow_oauth_cache=True)
+        playlist = pytubefix.Playlist(playlist_id)
         return Playlist(playlist)
 
     def __init__(self, playlist: pytubefix.Playlist):
+        def get_videos(playlist_videos):
+            for video in playlist_videos:
+                yield Video(video)
+    
         self.view_url = playlist.playlist_url
         self.title = playlist.title
         self.owner = playlist.owner
         self.length = playlist.length
         self.thumbnail_url = playlist.thumbnail_url
         self.views = playlist.views
-
-        def get_videos(playlist_videos):
-            for video in playlist_videos:
-                yield Video(video)
         self.videos = pytubefix.helpers.DeferredGeneratorList(get_videos(playlist.videos))
+
+class Search:
+    @staticmethod
+    def from_query(query: str) -> "Search":
+        if not query.strip():
+            raise Exception("Invalid search query")
+    
+        search = pytubefix.Search(query)
+        return Search(search)
+
+    def __init__(self, search: pytubefix.Search):
+        def get_videos(search_videos):
+            for video in search_videos:
+                yield Video(video)
+ 
+        self.query = search.query
+        self.videos = pytubefix.helpers.DeferredGeneratorList(get_videos(search.videos))

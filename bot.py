@@ -10,7 +10,7 @@ class Bot(commands.Bot):
         intents = Intents.default()
         intents.voice_states = True
         super(Bot, self).__init__(command_prefix="!", intents=intents)
-        super(Bot, self).run(config.getToken(), log_handler=None)
+        super(Bot, self).run(config.token, log_handler=None)
         
     async def setup_hook(self) -> None:
         for path in glob.glob("cogs/*.py"):

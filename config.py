@@ -9,6 +9,3 @@ class Config:
                 self.token = data["token"]
         except Exception:
             raise Exception(f"Couldn't read and parse config file \"{Config.FILENAME}\"")
-
-    def getToken(self) -> str:
-        return self.token
