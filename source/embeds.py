@@ -1,5 +1,6 @@
 import random
 import discord
+import youtube
 
 def embed(color: discord.Color, emoji: str, title: str, description: str) -> discord.Embed:
     embed = discord.Embed()
@@ -7,9 +8,8 @@ def embed(color: discord.Color, emoji: str, title: str, description: str) -> dis
     embed.title = f"{emoji} {title}"
     embed.description = description
     return embed
-    
 
-def good_embed(comment: str = None):
+def good_embed(comment: str = None) -> discord.Embed:
     phrase = random.choice([
         "Yes boss.",
         "Boss happy. Bob happy.",
@@ -34,7 +34,7 @@ def good_embed(comment: str = None):
     ])
     return embed(discord.Color.dark_green(), "✅", phrase, comment)
    
-def bad_embed(comment: str = None):
+def bad_embed(comment: str = None) -> discord.Embed:
     phrase = random.choice([
         "Bob not do this. Boss maybe did?",
         "Bob look. Not Bob's fault this time.",
@@ -59,7 +59,7 @@ def bad_embed(comment: str = None):
     ])
     return embed(discord.Color.red(), "❌", phrase, comment)
 
-def error_embed(comment: str = None):
+def error_embed(comment: str = None) -> discord.Embed:
     phrase = random.choice([
         "Oh no... Bob broke it?",
         "Bob touch thing. Thing break.",
@@ -83,3 +83,9 @@ def error_embed(comment: str = None):
         "Bob no get it. Boss help?"
     ])
     return embed(discord.Color.dark_red(), "💀", phrase, comment)
+
+def video_embed(video: youtube.Video) -> discord.Embed:
+    embed = good_embed("Bob add video to queue")
+    embed.add_field(name=video.title, value="")
+    embed.set_thumbnail(url=video.thumbnail_url)
+    return embed

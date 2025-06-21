@@ -13,7 +13,7 @@ class Bot(commands.Bot):
         super(Bot, self).run(config.token, log_handler=None)
         
     async def setup_hook(self) -> None:
-        for path in glob.glob("cogs/*.py"):
+        for path in glob.glob("*cog.py"):
             path = path.replace("\\\\", ".")
             path = path.replace("\\", ".")
             path = path.replace("/", ".")

@@ -5,3 +5,4 @@ venv/
 *.pyproj
 *.sln
 config.json
+libopus.so
