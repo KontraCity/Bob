@@ -2,11 +2,13 @@ import logging
 from discord import Intents
 from discord.ext import commands
 from config import Config
-from utility import configureLogger
+import utility
 
 class Bot(commands.Bot):
     def __init__(self, config: Config):
-        configureLogger(logging.getLogger("discord"))
+        self.logger = logging.getLogger(__name__)
+        utility.configureLogger(self.logger)
+        utility.configureLogger(logging.getLogger("discord"))
         intents = Intents.default()
         intents.voice_states = True
         intents.members = True
@@ -17,6 +19,7 @@ class Bot(commands.Bot):
     async def setup_hook(self) -> None:
         await self.load_extension("voice_cog")
         await self.tree.sync()
+        self.logger.info("Extentions loaded, tree synced")
 
     async def on_ready(self) -> None:
-        print(f"Logged in as {self.user}")
+        self.logger.info(f"Logged in as {self.user}")

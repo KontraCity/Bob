@@ -1,2 +1,3 @@
 1. Exception and error handling
-2. Global logging, no print()s
+2. Implement playlist support
+3. Investigate low audio quality
