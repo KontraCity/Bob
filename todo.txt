@@ -1,0 +1,2 @@
+1. Exception and error handling
+2. Global logging, no print()s

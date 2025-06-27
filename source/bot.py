@@ -1,4 +1,4 @@
-import glob, logging
+import logging
 from discord import Intents
 from discord.ext import commands
 from config import Config
@@ -9,6 +9,8 @@ class Bot(commands.Bot):
         configureLogger(logging.getLogger("discord"))
         intents = Intents.default()
         intents.voice_states = True
+        intents.members = True
+        intents.message_content = True
         super(Bot, self).__init__(command_prefix="!", intents=intents)
         super(Bot, self).run(config.token, log_handler=None)
 

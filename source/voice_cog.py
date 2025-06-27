@@ -3,7 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 import embeds
 from player import Player
-from youtube import Video, Playlist, Search
+from youtube import Video, Playlist
 
 class VoiceCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -46,8 +46,8 @@ class VoiceCog(commands.Cog):
         
         channel_id = voice_client.channel.id
         del self.players[channel_id]
-
         await voice_client.disconnect()
+
         embed = embeds.good_embed(f"Left <#{channel_id}>")
         await interaction.response.send_message(embed=embed)
 
@@ -59,27 +59,13 @@ class VoiceCog(commands.Cog):
             embed = embeds.bad_embed(f"Ambiguous")
             await interaction.response.send_message(embed=embed)
             return
-
-        if is_video:
-            await interaction.response.defer()
-            video = Video.from_url(url)
-            player = await self.join_voice(interaction, silent=True)
-            player.add_item(video)
-            embed = embeds.video_embed(video)
-            await interaction.followup.send(embed=embed)
-            return
         
         await interaction.response.defer()
-        search = Search.from_query(url)
-        if len(search.videos) == 0:
-            embed = embeds.bad_embed(f"No results for \"{url}\"")
-            await interaction.followup.send(embed=embed)
-        else:
-            video = search.videos[0]
-            player = await self.join_voice(interaction, silent=True)
-            player.add_item(video)
-            embed = embeds.video_embed(video)
-            await interaction.followup.send(embed=embed)
+        video = Video.from_url(url) if is_video else Video.from_query(url)
+        player = await self.join_voice(interaction, silent=True)
+        player.add_item(video)
+        embed = embeds.video_embed(video)
+        await interaction.followup.send(embed=embed)
 
     @app_commands.command(name="skip", description="Skip playing video")
     async def skip(self, interaction: discord.Interaction):
@@ -114,6 +100,22 @@ class VoiceCog(commands.Cog):
         player.stop()
         embed = embeds.good_embed("Playback is stopped")
         await interaction.response.send_message(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        if member.bot:
+            return
+        
+        voice_client = discord.utils.get(self.bot.voice_clients, guild=member.guild)
+        if not voice_client or not voice_client.channel:
+            return
+
+        if before.channel == voice_client.channel:
+            remaining = [member for member in before.channel.members if not member.bot]
+            if len(remaining) == 0:
+                channel_id = voice_client.channel.id
+                del self.players[channel_id]
+                await voice_client.disconnect()
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(VoiceCog(bot))

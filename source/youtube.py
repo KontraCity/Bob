@@ -37,6 +37,13 @@ class Video:
         video = pytubefix.YouTube(f"https://www.youtube.com/watch?v={video_id}")
         return Video(video)
 
+    @staticmethod
+    def from_query(url: str) -> "Video":
+        search = pytubefix.Search(url)
+        if len(search.videos) == 0:
+            raise Exception("No results")
+        return Video(search.videos[0])
+
     def __init__(self, video: pytubefix.YouTube):
         self._video = video
         self.video_id = video.video_id
@@ -87,20 +94,3 @@ class Playlist:
         self.thumbnail_url = playlist.thumbnail_url
         self.views = playlist.views
         self.videos = pytubefix.helpers.DeferredGeneratorList(get_videos(playlist.videos))
-
-class Search:
-    @staticmethod
-    def from_query(query: str) -> "Search":
-        if not query.strip():
-            raise Exception("Invalid search query")
-    
-        search = pytubefix.Search(query)
-        return Search(search)
-
-    def __init__(self, search: pytubefix.Search):
-        def get_videos(search_videos):
-            for video in search_videos:
-                yield Video(video)
- 
-        self.query = search.query
-        self.videos = pytubefix.helpers.DeferredGeneratorList(get_videos(search.videos))
