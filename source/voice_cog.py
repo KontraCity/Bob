@@ -12,22 +12,22 @@ class VoiceCog(commands.Cog):
 
     async def join_voice(self, interaction: discord.Interaction, silent: bool = False) -> Player:
         if not interaction.user.voice or not interaction.user.voice.channel:
-            embed = embeds.bad_embed("No boss in voice room. Bob look, no find.")
+            embed = embeds.bad_embed("Join a voice channel first")
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return None
             
         channel = interaction.user.voice.channel
         voice_client = interaction.guild.voice_client
         if voice_client and voice_client.channel == channel:
-            embed = embeds.good_embed(f"Boss, Bob no move. Here now. Already in <#{channel.id}>.")
+            embed = embeds.good_embed(f"Already in <#{channel.id}>")
         elif interaction.guild.voice_client:
             await interaction.guild.voice_client.move_to(channel)
-            embed = embeds.good_embed(f"Bob leave old place. Now in <#{channel.id}>.")
+            embed = embeds.good_embed(f"Moved to <#{channel.id}>")
         else:
             voice_client = await channel.connect()
             self.players[voice_client.channel.id] = Player(voice_client)
-            embed = embeds.good_embed(f"Bob join! Now in <#{channel.id}>, boss.")
-            
+            embed = embeds.good_embed(f"Joined <#{channel.id}>")
+
         if not silent:
             await interaction.response.send_message(embed=embed)
         return self.players[voice_client.channel.id]
@@ -40,7 +40,7 @@ class VoiceCog(commands.Cog):
     async def leave(self, interaction: discord.Interaction):
         voice_client = interaction.guild.voice_client
         if not voice_client or not voice_client.is_connected():
-            embed = embeds.bad_embed("Boss, look! Bob no join voice yet.")
+            embed = embeds.bad_embed("Not in voice channel")
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
         
@@ -48,7 +48,7 @@ class VoiceCog(commands.Cog):
         del self.players[channel_id]
 
         await voice_client.disconnect()
-        embed = embeds.good_embed(f"Bob leave boss voice place <#{channel_id}>.")
+        embed = embeds.good_embed(f"Left <#{channel_id}>")
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="play", description="Play YouTube video or playlist")
@@ -56,52 +56,63 @@ class VoiceCog(commands.Cog):
         is_video = Video.extract_id(url) is not None
         is_playlist = Playlist.extract_id(url) is not None
         if is_video and is_playlist:
-            embed = embeds.bad_embed(f"Ambiguous, boss.")
+            embed = embeds.bad_embed(f"Ambiguous")
             await interaction.response.send_message(embed=embed)
             return
 
         if is_video:
-            player = await self.join_voice(interaction, silent=True)
+            await interaction.response.defer()
             video = Video.from_url(url)
+            player = await self.join_voice(interaction, silent=True)
             player.add_item(video)
             embed = embeds.video_embed(video)
-            await interaction.response.send_message(embed=embed)
-
-        embed = embeds.problem_embed("Sorry, boss. I can't search now.")
-        await interaction.response.send_message(embed=embed)
+            await interaction.followup.send(embed=embed)
+            return
+        
+        await interaction.response.defer()
+        search = Search.from_query(url)
+        if len(search.videos) == 0:
+            embed = embeds.bad_embed(f"No results for \"{url}\"")
+            await interaction.followup.send(embed=embed)
+        else:
+            video = search.videos[0]
+            player = await self.join_voice(interaction, silent=True)
+            player.add_item(video)
+            embed = embeds.video_embed(video)
+            await interaction.followup.send(embed=embed)
 
     @app_commands.command(name="skip", description="Skip playing video")
     async def skip(self, interaction: discord.Interaction):
-        if interaction.guild.voice_client.channel.id not in self.players:
-            embed = embeds.bad_embed("Boss, I'm not even in a voice channel")
+        if not interaction.guild.voice_client:
+            embed = embeds.bad_embed("Not in voice channel")
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
         player = self.players[interaction.guild.voice_client.channel.id]
 
         if not player.voice_client.is_playing():
-            embed = embeds.bad_embed("Boss, I'm not playing anything")
+            embed = embeds.bad_embed("Not playing")
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
         player.skip_video()
-        embed = embeds.good_embed("Boss, video is skipped")
+        embed = embeds.good_embed("Video skipped")
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="stop", description="Stop playing video and clear queue")
     async def stop(self, interaction: discord.Interaction):
-        if interaction.guild.voice_client.channel.id not in self.players:
-            embed = embeds.bad_embed("Boss, I'm not even in a voice channel")
+        if not interaction.guild.voice_client:
+            embed = embeds.bad_embed("Not in a voice channel")
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
         player = self.players[interaction.guild.voice_client.channel.id]
 
         if not player.voice_client.is_playing():
-            embed = embeds.bad_embed("Boss, I'm not playing anything")
+            embed = embeds.bad_embed("Not playing")
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
         player.stop()
-        embed = embeds.good_embed("Boss, playback is stopped")
+        embed = embeds.good_embed("Playback is stopped")
         await interaction.response.send_message(embed=embed)
 
 async def setup(bot: commands.Bot):

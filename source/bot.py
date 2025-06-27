@@ -11,14 +11,9 @@ class Bot(commands.Bot):
         intents.voice_states = True
         super(Bot, self).__init__(command_prefix="!", intents=intents)
         super(Bot, self).run(config.token, log_handler=None)
-        
+
     async def setup_hook(self) -> None:
-        for path in glob.glob("*cog.py"):
-            path = path.replace("\\\\", ".")
-            path = path.replace("\\", ".")
-            path = path.replace("/", ".")
-            path = path.replace(".py", "")
-            await self.load_extension(path)
+        await self.load_extension("voice_cog")
         await self.tree.sync()
 
     async def on_ready(self) -> None:
