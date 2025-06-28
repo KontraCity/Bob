@@ -39,13 +39,15 @@ class VoiceCog(commands.Cog):
             message = self.log_message(interaction, f"Moved to #{channel.name}")
         else:
             voice_client = await channel.connect()
-            self.players[voice_client.guild.id] = Player(voice_client)
             embed = good_embed(f"Joined <#{channel.id}>")
             message = self.log_message(interaction, f"Joined #{channel.name}")
 
         if not silent:
             self.logger.info(message)
             await interaction.response.send_message(embed=embed)
+        
+        if voice_client.guild.id not in self.players:
+            self.players[voice_client.guild.id] = Player(voice_client)
         return self.players[voice_client.guild.id]
 
     @app_commands.command(name="join", description="Join your voice channel")
@@ -61,7 +63,6 @@ class VoiceCog(commands.Cog):
             return
         
         channel_id, channel_name = voice_client.channel.id, voice_client.channel.name
-        del self.players[voice_client.guild.id]
         await voice_client.disconnect()
 
         self.logger.info(self.log_message(interaction, f"Left #{channel_name}"))
@@ -77,7 +78,7 @@ class VoiceCog(commands.Cog):
 
         await interaction.response.defer()
         video = Video.from_url(url) if is_video_url else Video.from_query(url)
-        player.add_item(video)
+        player.add_item(video, interaction.user)
         self.logger.info(self.log_message(interaction, f"Added \"{video.title}\""))
         await interaction.followup.send(embed=video_embed(video))
 
@@ -87,8 +88,8 @@ class VoiceCog(commands.Cog):
             self.logger.info(self.log_message(interaction, "User not in voice channel"))
             await interaction.response.send_message(embed=bad_embed("Not in voice channel"), ephemeral=True)
             return
+        
         player = self.players[interaction.guild.id]
-
         if not player.voice_client.is_playing():
             self.logger.info(self.log_message(interaction, "Bot is not playing"))
             await interaction.response.send_message(embed=bad_embed("Not playing"), ephemeral=True)
@@ -104,8 +105,8 @@ class VoiceCog(commands.Cog):
             self.logger.info(self.log_message(interaction, "User not in voice channel"))
             await interaction.response.send_message(embed=bad_embed("Not in a voice channel"), ephemeral=True)
             return
+        
         player = self.players[interaction.guild.id]
-
         if not player.voice_client.is_playing():
             self.logger.info(self.log_message(interaction, "Bot is not playing"))
             await interaction.response.send_message(embed=bad_embed("Not playing"), ephemeral=True)
@@ -115,21 +116,32 @@ class VoiceCog(commands.Cog):
         self.logger.info(self.log_message(interaction, "Playback stopped"))
         await interaction.response.send_message(embed=good_embed("Playback stopped"))
 
+    @app_commands.command(name="queue", description="Stop playing video and clear queue")
+    async def queue(self, interaction: discord.Interaction):
+        if not interaction.guild.voice_client:
+            self.logger.info(self.log_message(interaction, "User not in voice channel"))
+            await interaction.response.send_message(embed=bad_embed("Not in a voice channel"), ephemeral=True)
+            return
+        
+        player = self.players[interaction.guild.id]
+        self.logger.info(self.log_message(interaction, "Showing queue"))
+        await interaction.response.send_message(embed=queue_embed(player))
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if member.bot:
-            return
-        
-        voice_client = discord.utils.get(self.bot.voice_clients, guild=member.guild)
-        if not voice_client or not voice_client.channel:
-            return
+            if before.channel and not after.channel:
+                del self.players[member.guild.id]
+        else:
+            voice_client = discord.utils.get(self.bot.voice_clients, guild=member.guild)
+            if not voice_client or not voice_client.channel:
+                return
 
-        if before.channel == voice_client.channel:
-            remaining_humans = [member for member in before.channel.members if not member.bot]
-            if len(remaining_humans) == 0:
-                self.logger.info(f"\"{member.guild.name}\": Everybody left the voice channel, leaving")
-                del self.players[voice_client.guild.id]
-                await voice_client.disconnect()
+            if before.channel == voice_client.channel:
+                remaining_humans = [member for member in before.channel.members if not member.bot]
+                if len(remaining_humans) == 0:
+                    self.logger.info(f"\"{member.guild.name}\": Everybody left the voice channel, leaving")
+                    await voice_client.disconnect()
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(VoiceCog(bot))

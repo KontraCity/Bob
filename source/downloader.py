@@ -68,6 +68,11 @@ class Downloader(discord.AudioSource):
         if len(self.buffer) == 0:
             return b""
 
+        if len(self.buffer) < self.frame_size:
+            output = self.buffer + b"\x00" * (self.frame_size - len(self.buffer))
+            self.buffer = b""
+            return output
+
         output, self.buffer = self.buffer[:self.frame_size], self.buffer[self.frame_size:]
         return output
 

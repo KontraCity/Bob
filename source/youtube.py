@@ -53,6 +53,7 @@ class Video:
         self.length = datetime.timedelta(seconds=video.length)
         self.thumbnail_url = video.thumbnail_url
         self.views = video.views
+        self.upload_date = video.publish_date
         self.chapters = [Video.Chapter(c.title, c.start_seconds, c.duration, c.thumbnails[-1].url) for c in video.chapters]
         self.heatmap = [Video.Block(b["start_seconds"], b["duration"], b["norm_intensity"]) for b in video.replayed_heatmap]
 
