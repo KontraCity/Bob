@@ -1,0 +1,14 @@
+[Unit]
+Description=Bob - Discord music bot
+After=network-online.target
+
+[Service]
+User=bob
+Group=bob
+WorkingDirectory=/home/bob
+ExecStart=/home/bob/start.sh rel
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

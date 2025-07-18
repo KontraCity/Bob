@@ -5,8 +5,4 @@ venv/
 
 *.pyproj
 *.sln
-deb_config.json
-rel_config.json
 config.json
-libopus.so
-output.log

@@ -23,3 +23,6 @@ class Bot(commands.Bot):
 
     async def on_ready(self) -> None:
         self.logger.info(f"Logged in as {self.user}")
+        self.logger.info(f"Serving {len(self.guilds)} guilds:")
+        for guild in self.guilds:
+            self.logger.info(f"  \"{guild.name}\"")

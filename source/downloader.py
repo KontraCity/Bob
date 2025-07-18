@@ -2,8 +2,6 @@ import requests
 import av
 import discord
 import discord.opus
-if not discord.opus.is_loaded():
-    discord.opus.load_opus('./libopus.so')
 
 class Downloader(discord.AudioSource):
     @staticmethod

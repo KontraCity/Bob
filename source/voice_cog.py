@@ -38,7 +38,7 @@ class VoiceCog(commands.Cog):
             embed = good_embed(f"Moved to <#{channel.id}>")
             message = self.log_message(interaction, f"Moved to #{channel.name}")
         else:
-            voice_client = await channel.connect()
+            voice_client = await channel.connect(self_deaf=True)
             embed = good_embed(f"Joined <#{channel.id}>")
             message = self.log_message(interaction, f"Joined #{channel.name}")
 
@@ -116,7 +116,7 @@ class VoiceCog(commands.Cog):
         self.logger.info(self.log_message(interaction, "Playback stopped"))
         await interaction.response.send_message(embed=good_embed("Playback stopped"))
 
-    @app_commands.command(name="queue", description="Stop playing video and clear queue")
+    @app_commands.command(name="queue", description="Show what's playing and what's in queue")
     async def queue(self, interaction: discord.Interaction):
         if not interaction.guild.voice_client:
             self.logger.info(self.log_message(interaction, "User not in voice channel"))
